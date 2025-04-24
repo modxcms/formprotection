@@ -4,7 +4,6 @@ lowCaseName: formprotection
 namespace: FormProtection
 description: 'A FormIt hook for MODX that provides enhanced spam protection through content filtering, timed submissions, and email validation.'
 author: jaygilmore
-menus:
-    -
-        text: formprotection.menu
-        action: manage
+snippets:
+    - name: formProtectionHook
+    - name: generateTimeTokenHook
