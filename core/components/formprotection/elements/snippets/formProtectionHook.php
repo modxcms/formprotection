@@ -119,5 +119,14 @@ if (empty($hook->getErrors())) {
     }
 }
 
+// Optionally clear the token from session after successful submission
+$sessionKey = $modx->getOption('spamTimeSessionKey', $scriptProperties, 'form_time_token');
+if (session_status() === PHP_SESSION_NONE) {
+    @session_start();
+}
+if (session_status() === PHP_SESSION_ACTIVE && isset($_SESSION[$sessionKey])) {
+    unset($_SESSION[$sessionKey]);
+}
+
 // Return true only if there are no errors
 return empty($hook->getErrors());

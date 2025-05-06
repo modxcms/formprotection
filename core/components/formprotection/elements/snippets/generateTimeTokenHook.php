@@ -7,14 +7,12 @@
  * formProtectionHook to prevent bot submissions and form spam.
  *
  * @author Jay Gilmore <jay@modx.com>
- * @version 0.9
- * @date April 23, 2025
  * @package formit
  * @subpackage hooks
  *
  * PROPERTIES:
  * -------------------
- * [No configurable properties - uses system settings]
+ * spamTimeSessionKey - (optional) The session key used to store the token. Defaults to 'form_time_token'.
  *
  * SYSTEM SETTINGS:
  * -------------------
@@ -31,14 +29,41 @@
  * 2. Add this hidden input to your form:
  * <input type="hidden" name="form_time_token" id="form_time_token" value="[[!+fi.form_time_token]]">
  */
-
-$modx = $hook->modx;
-// Hardcoded or use MODX system setting
-$field = 'form_time_token'; 
-$secret = $modx->getOption('formit.spam_time_secret', null, 'changeme');
-$timestamp = time();
-$hash = hash_hmac('sha256', $timestamp, $secret);
-$token = $timestamp . ':' . $hash;
-// Set the token as a FormIt placeholder
-$hook->setValue($field, $token);
-return true;
+ 
+ $modx = $hook->modx;
+ // Field name for form and placeholder
+ $field = 'form_time_token';
+ 
+ // Allow configurable session key
+ $sessionKey = $modx->getOption('spamTimeSessionKey', $scriptProperties, 'form_time_token');
+ 
+ // Start session if available
+ if (session_status() === PHP_SESSION_NONE) {
+     @session_start();
+ }
+ 
+ $token = '';
+ 
+ // Try to reuse from session
+ if (!empty($_SESSION[$sessionKey])) {
+     $token = $_SESSION[$sessionKey];
+ }
+ // Or fallback to submitted POST value
+ elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST[$field])) {
+     $token = $_POST[$field];
+ }
+ // Otherwise generate a new token
+ else {
+     $secret = $modx->getOption('formit.spam_time_secret', null, 'changeme');
+     $timestamp = time();
+     $hash = hash_hmac('sha256', $timestamp, $secret);
+     $token = $timestamp . ':' . $hash;
+ }
+ 
+ // Store in session (if enabled) and set as placeholder
+ if (session_status() === PHP_SESSION_ACTIVE) {
+     $_SESSION[$sessionKey] = $token;
+ }
+ 
+ $hook->setValue($field, $token);
+ return true;
