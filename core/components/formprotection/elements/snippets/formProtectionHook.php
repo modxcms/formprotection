@@ -58,6 +58,16 @@ $spamEmailErrorMessage = $modx->getOption('spamEmailErrorMessage', $scriptProper
 $timeTokenErrorMessage = $modx->getOption('timeTokenErrorMessage', $scriptProperties, 'Invalid time token.');
 $timeThresholdErrorMessage = $modx->getOption('timeThresholdErrorMessage', $scriptProperties, 'Form submitted too fast. Please wait a moment.');
 
+// Include rateLimiter
+$path = $modx->getOption('formprotection.core_path', null, $modx->getOption('core_path') . 'components/formprotection/') . 'includes';
+require_once($path . 'rateLimiter.php');
+
+// Rate limiting check
+if (isRateLimited('formProtection', 30)) {
+    $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] Rate limit exceeded: Too many submissions.");
+    $hook->addError('rate_limit', 'Rate limit exceeded. Too many submissions.');
+    return false;
+}
 // Spam content check for all text fields
 foreach ($formFields as $fieldName => $fieldValue) {
     // Skip non-text fields (e.g., hidden fields, checkboxes, etc.)
