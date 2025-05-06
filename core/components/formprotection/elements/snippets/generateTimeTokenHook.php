@@ -64,6 +64,6 @@
  if (session_status() === PHP_SESSION_ACTIVE) {
      $_SESSION[$sessionKey] = $token;
  }
- 
+ $modx->log(modX::LOG_LEVEL_ERROR, "[SessionDebug] Session token ($sessionKey): " . ($_SESSION[$sessionKey] ?? 'NOT SET'));
  $hook->setValue($field, $token);
  return true;

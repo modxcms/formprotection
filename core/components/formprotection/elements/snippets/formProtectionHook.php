@@ -125,6 +125,8 @@ if (session_status() === PHP_SESSION_NONE) {
     @session_start();
 }
 if (session_status() === PHP_SESSION_ACTIVE && isset($_SESSION[$sessionKey])) {
+    $modx->log(modX::LOG_LEVEL_ERROR, "[SessionDebug] Session token before unset: " . ($_SESSION[$sessionKey] ?? 'NOT SET'));
+
     unset($_SESSION[$sessionKey]);
 }
 
