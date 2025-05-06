@@ -59,7 +59,7 @@ $timeTokenErrorMessage = $modx->getOption('timeTokenErrorMessage', $scriptProper
 $timeThresholdErrorMessage = $modx->getOption('timeThresholdErrorMessage', $scriptProperties, 'Form submitted too fast. Please wait a moment.');
 
 // Include rateLimiter
-$path = $modx->getOption('formprotection.core_path', null, $modx->getOption('core_path') . 'components/formprotection/') . 'includes';
+$path = $modx->getOption('formprotection.core_path', null, $modx->getOption('core_path') . 'components/formprotection/') . 'includes/';
 require_once($path . 'rateLimiter.php');
 
 // Rate limiting check
