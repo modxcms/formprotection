@@ -120,16 +120,26 @@ if ($enableRateLimit && empty($hook->getErrors())) {
         $rateLimitSubmissionInterval = (int)$modx->getOption('rateLimitSubmissionInterval', $scriptProperties, 86400);
 
         // Check if the IP + User-Agent + Cookie exceeds the submission limit
-        if (function_exists('isRateLimited') && isRateLimited(
-            $rateLimitActionKey,
-            $rateLimitSeconds,
-            $cookieName,
-            $rateLimitMaxSubmissions,
-            $rateLimitSubmissionInterval
-        )) {
-            $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] Rate limit exceeded.");
-            $hook->addError('rate_limit', $rateLimitErrorMessage);
-            return false;
+        if (function_exists('isRateLimited')) {
+            $rateLimitResult = isRateLimited(
+                $rateLimitActionKey,
+                $rateLimitSeconds,
+                $cookieName,
+                $rateLimitMaxSubmissions,
+                $rateLimitSubmissionInterval
+            );
+
+            if ($rateLimitResult === 1) {
+                // Per-request delay triggered
+                $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] Rate limit exceeded: Per-request delay.");
+                $hook->addError('rate_limit', $rateLimitErrorMessage); // Short timeframe error
+                return false;
+            } elseif ($rateLimitResult === 2) {
+                // Max submissions per day triggered
+                $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] Rate limit exceeded: Max submissions per day.");
+                $hook->addError('rate_limit', $rateLimitMaxSubmissionsErrorMessage); // Max submissions error
+                return false;
+            }
         }
     } else {
         $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] rateLimiter.php not found at: {$path}");

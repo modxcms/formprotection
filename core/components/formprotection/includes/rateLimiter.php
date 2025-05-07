@@ -16,7 +16,7 @@
  * @param string $cookieName The name of the cookie used for rate limiting (default: 'submission')
  * @param int $maxSubmissions The maximum number of submissions allowed within the submission interval
  * @param int $submissionInterval The interval in seconds to count submissions (default: 86400 seconds)
- * @return bool True if rate limited, false otherwise
+ * @return int 2 if rate limited due to max submissions, 1 if rate limited due to per-request delay, 0 if not rate limited
  */
 function isRateLimited($actionKey, $limitSeconds = 10, $cookieName = 'submission', $maxSubmissions = 5, $submissionInterval = 86400) {
     // Get client IP address and User-Agent
@@ -51,13 +51,13 @@ function isRateLimited($actionKey, $limitSeconds = 10, $cookieName = 'submission
     // Check if the number of submissions exceeds the limit
     if (count($timestamps) >= $maxSubmissions) {
         error_log("[RateLimiter] Rate limited due to max submissions: " . count($timestamps));
-        return true; // Rate limited due to max submissions
+        return 2; // Rate limited due to max submissions
     }
 
     // Enforce the per-request rate limit (e.g., 10 seconds between submissions)
     if (count($timestamps) > 1 && ($now - $timestamps[count($timestamps) - 2]) < $limitSeconds) {
         error_log("[RateLimiter] Rate limited due to per-request delay");
-        return true; // Rate limited due to per-request delay
+        return 1; // Rate limited due to per-request delay
     }
 
     // Add the current timestamp and save back to the file
@@ -91,5 +91,5 @@ function isRateLimited($actionKey, $limitSeconds = 10, $cookieName = 'submission
     }
 
     // Not rate limited
-    return false;
+    return 0;
 }
