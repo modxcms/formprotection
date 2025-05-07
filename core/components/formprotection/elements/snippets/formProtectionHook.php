@@ -3,7 +3,7 @@
  * formProtectionHook
  *
  * A FormIt hook for MODX that provides enhanced spam protection through
- * content filtering, timed submissions, and email validation.
+ * content filtering, timed submissions, email validation, and rate limiting.
  *
  * IMPORTANT: Requires the generateTimeTokenHook to be used as a preHook
  * and a hidden input field in the form for the time token.
@@ -23,6 +23,10 @@
  * spamEmailErrorMessage   - Error message for spam email detection
  * timeTokenErrorMessage   - Error message for invalid time token
  * timeThresholdErrorMessage - Error message for form submitted too fast
+ * rateLimit               - Enable rate limiting (default: true)
+ * rateLimitSeconds        - Rate limit threshold in seconds (default: 30)
+ * rateLimitActionKey      - Custom identifier for rate limiting (default: formProtection)
+ * formId                  - Optional form identifier to make rate limiting unique per form
  *
  * USAGE:
  * 1. Add the generateTimeTokenHook as a preHook:
@@ -39,6 +43,7 @@
 
 // Get form values 
 $formFields = $hook->getValues();
+$errors = array();
 
 // Get email field
 $emailField = $modx->getOption('spamEmailField', $scriptProperties, 'email');
@@ -57,17 +62,42 @@ $spamContentErrorMessage = $modx->getOption('spamContentErrorMessage', $scriptPr
 $spamEmailErrorMessage = $modx->getOption('spamEmailErrorMessage', $scriptProperties, 'Email picked up as spam.');
 $timeTokenErrorMessage = $modx->getOption('timeTokenErrorMessage', $scriptProperties, 'Invalid time token.');
 $timeThresholdErrorMessage = $modx->getOption('timeThresholdErrorMessage', $scriptProperties, 'Form submitted too fast. Please wait a moment.');
+$rateLimitErrorMessage = $modx->getOption('rateLimitErrorMessage', $scriptProperties, 'Rate limit exceeded. Too many submissions.');
 
-// Include rateLimiter
-$path = $modx->getOption('formprotection.core_path', null, $modx->getOption('core_path') . 'components/formprotection/') . 'includes/';
-require_once($path . 'rateLimiter.php');
+// Check if rate limiting is enabled
+$enableRateLimit = (bool)$modx->getOption('rateLimit', $scriptProperties, true);
 
 // Rate limiting check
-if (isRateLimited('formProtection', 30)) {
-    $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] Rate limit exceeded: Too many submissions.");
-    $hook->addError('rate_limit', 'Rate limit exceeded. Too many submissions.');
-    return false;
+if ($enableRateLimit) {
+    // Include rateLimiter
+    $path = $modx->getOption('formprotection.core_path', null, $modx->getOption('core_path') . 'components/formprotection/') . 'includes/';
+    
+    // Check if file exists before requiring
+    if (file_exists($path . 'rateLimiter.php')) {
+        require_once($path . 'rateLimiter.php');
+        
+        // Rate limiting seconds
+        $rateLimitSeconds = (int)$modx->getOption('rateLimitSeconds', $scriptProperties, 30);
+        
+        // Allow custom action key per form (useful for multiple forms on the same site)
+        $rateLimitActionKey = $modx->getOption('rateLimitActionKey', $scriptProperties, 'formProtection');
+        
+        // Optionally append form ID to make rate limiting unique per form
+        $formId = $modx->getOption('formId', $scriptProperties, '');
+        if (!empty($formId)) {
+            $rateLimitActionKey .= '_' . $formId;
+        }
+        
+        if (function_exists('isRateLimited') && isRateLimited($rateLimitActionKey, $rateLimitSeconds)) {
+            $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] Rate limit exceeded: Too many submissions.");
+            $hook->addError('rate_limit', $rateLimitErrorMessage);
+            return false;
+        }
+    } else {
+        $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] rateLimiter.php not found at: " . $path);
+    }
 }
+
 // Spam content check for all text fields
 foreach ($formFields as $fieldName => $fieldValue) {
     // Skip non-text fields (e.g., hidden fields, checkboxes, etc.)
@@ -99,34 +129,34 @@ if (isset($formFields[$emailField])) {
     }
 }
 
-// Time token validation (only if there are no existing form errors)
-if (empty($hook->getErrors())) {
-    $timeField = $modx->getOption('spamTimeField', $scriptProperties, 'form_time_token');
-    $secretKey = $modx->getOption('formit.spam_time_secret', null, 'changeme');
-    $threshold = (int)$modx->getOption('spamTimeThreshold', $scriptProperties, 7);
+// Time token validation
+$timeField = $modx->getOption('spamTimeField', $scriptProperties, 'form_time_token');
+$secretKey = $modx->getOption('formit.spam_time_secret', null, 'changeme');
+$threshold = (int)$modx->getOption('spamTimeThreshold', $scriptProperties, 7);
 
-    $token = $formFields[$timeField] ?? '';
+$token = isset($formFields[$timeField]) ? $formFields[$timeField] : '';
 
-    if (!empty($token) && strpos($token, ':') !== false) {
-        list($timestamp, $hash) = explode(':', $token);
+if (!empty($token) && strpos($token, ':') !== false) {
+    list($timestamp, $hash) = explode(':', $token);
 
-        $expectedHash = hash_hmac('sha256', $timestamp, $secretKey);
+    $expectedHash = hash_hmac('sha256', $timestamp, $secretKey);
 
-        if (!hash_equals($expectedHash, $hash)) {
-            $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] Time token hash validation failed");
-            $hook->addError($timeField, $timeTokenErrorMessage);
-        } else {
-            $elapsed = time() - (int)$timestamp;
-
-            if ($elapsed < $threshold) {
-                $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] Form submitted too quickly ($elapsed seconds < $threshold seconds threshold)");
-                $hook->addError($timeField, $timeThresholdErrorMessage);
-            }
-        }
-    } else {
-        $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] Invalid time token format");
+    if (!hash_equals($expectedHash, $hash)) {
+        $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] Time token hash validation failed");
         $hook->addError($timeField, $timeTokenErrorMessage);
+    } else {
+        $elapsed = time() - (int)$timestamp;
+
+        if ($elapsed < $threshold) {
+            $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] Form submitted too quickly ($elapsed seconds < $threshold seconds threshold)");
+            $hook->addError($timeField, $timeThresholdErrorMessage);
+        } else {
+            $modx->log(modX::LOG_LEVEL_INFO, "[FormProtection] Time token validation successful ($elapsed seconds elapsed)");
+        }
     }
+} else {
+    $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] Invalid time token format");
+    $hook->addError($timeField, $timeTokenErrorMessage);
 }
 
 // Optionally clear the token from session after successful submission
