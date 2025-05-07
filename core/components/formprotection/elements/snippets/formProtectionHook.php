@@ -2,44 +2,60 @@
 /**
  * formProtectionHook
  *
- * A FormIt hook for MODX that provides enhanced spam protection through
- * content filtering, timed submissions, email validation, and rate limiting.
+ * A FormIt hook for MODX that adds extra spam protection via:
+ * - Spam word and email filtering
+ * - Submission timing check using a time token
+ * - Optional rate limiting
  *
- * IMPORTANT: Requires the generateTimeTokenHook to be used as a preHook
- * and a hidden input field in the form for the time token.
- *
+ * IMPORTANT:
+ * - This hook requires the `generateTimeTokenHook` to be used as a preHook.
+ * - You must include a hidden time token field in your form.
+ * 
  * @author Jay Gilmore <jay@modx.com>
  * @package formit
  * @subpackage hooks
  *
  * PROPERTIES:
  * -------------------
- * spamEmailField          - Field name for email address (default: email)
- * spamWordPatterns        - Comma-separated list of spam words/patterns to check for
- * spamEmailPatterns       - Comma-separated list of spam email patterns to reject
- * spamTimeField           - Field name for time token (default: form_time_token)
- * spamTimeThreshold       - Minimum seconds before form submission is allowed (default: 7)
- * spamContentErrorMessage - Error message for spam content detection
- * spamEmailErrorMessage   - Error message for spam email detection
- * timeTokenErrorMessage   - Error message for invalid time token
- * timeThresholdErrorMessage - Error message for form submitted too fast
- * rateLimit               - Enable rate limiting (default: true)
- * rateLimitSeconds        - Rate limit threshold in seconds (default: 30)
- * rateLimitActionKey      - Custom identifier for rate limiting (default: formProtection)
- * formId                  - Optional form identifier to make rate limiting unique per form
+ * spamEmailField            - Name of the email field to check (default: email)
+ * spamWordPatterns          - Comma-separated list of spam keywords (default includes common spam terms)
+ * spamEmailPatterns         - Comma-separated list of email domains or patterns to reject
+ * spamTimeField             - Name of the hidden time token field (default: form_time_token)
+ * spamTimeThreshold         - Minimum seconds before the form can be submitted (default: 7)
+ * formId                    - Optional form ID for unique rate limiting per form
+ *
+ * spamContentErrorMessage   - Error message shown when spammy content is found
+ * spamEmailErrorMessage     - Error message shown for spammy email addresses
+ * timeTokenErrorMessage     - Error message shown for invalid or missing time token
+ * timeThresholdErrorMessage - Error message shown if the form was submitted too quickly
+ * rateLimitErrorMessage     - Error shown if submission exceeds rate limit
+ *
+ * rateLimit                 - Enable or disable rate limiting (default: true)
+ * rateLimitSeconds          - Seconds to wait before allowing another submission (default: 30)
+ * rateLimitActionKey        - Unique action key for rate limiting (default: formProtection)
+ *
+ * spamTimeSessionKey        - Session key used for clearing the time token (default: form_time_token)
  *
  * USAGE:
- * 1. Add the generateTimeTokenHook as a preHook:
+ * -------------------
  * [[!FormIt?
  *   &preHooks=`generateTimeTokenHook`
  *   &hooks=`formProtectionHook,email`
  *   &spamTimeThreshold=`5`
+ *   &rateLimit=`1`
  *   ...
  * ]]
  *
- * 2. Add this hidden input to your form:
- * <input type="hidden" name="form_time_token" id="form_time_token" value="[[!+fi.form_time_token]]">
+ * Inside your form:
+ * <input type="hidden" name="form_time_token" value="[[!+fi.form_time_token]]">
+ * 
+ * To display error messages for Time Token and Rate Limit 
+ * add the following to the top of your form:
+ * [[!+fi.error.form_time_token]]
+ * [[!+fi.error.rate_limit]]
+ * 
  */
+
 
 // Get form values 
 $formFields = $hook->getValues();
