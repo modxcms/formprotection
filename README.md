@@ -14,9 +14,8 @@ Requires: MODX Revolution, FormIt
 - **Fully configurable**: Customize all aspects of the protection
 
 ## Installation
-1. Download the Form Protection package from the MODX Package Manager.
-2. Install via the MODX Package Manager.
-3. Set up the system setting `formit.spam_time_secret` with a unique key (optional but recommended).
+1. Install via the MODX Package Manager.
+2. Set up the system setting `formit.spam_time_secret` with a unique key (optional but recommended).
 
 ## Quick Start
 1. Add the `generateTimeTokenHook` as a preHook in your FormIt call.
@@ -33,6 +32,7 @@ Requires: MODX Revolution, FormIt
   &spamEmailPatterns=`.ru,spammer.com`
   &rateLimit=`1`
   &rateLimitSeconds=`30`
+  &rateLimitCookieName=`threshold_token`
 ]]
 
 <form action="[[~[[*id]]]]" method="post">
@@ -68,15 +68,16 @@ Form Protection uses a two-hook approach to validate submissions:
 | spamEmailPatterns         | Comma-separated list of spam email patterns     | "order-fulfillment.net,bestlocaldata.com,.ru" |
 | spamTimeField             | Field name for time token                       | "form_time_token"                         |
 | spamTimeThreshold         | Minimum seconds before form submission is allowed | 7                                       |
-| spamContentErrorMessage   | Error message for spam content detection        | "Input picked up as spam."               |
-| spamEmailErrorMessage     | Error message for spam email detection          | "Email picked up as spam."               |
-| timeTokenErrorMessage     | Error message for invalid time token            | "Invalid time token."                    |
-| timeThresholdErrorMessage | Error message for form submitted too fast       | "Form submitted too fast. Please wait a moment." |
+| spamContentErrorMessage   | Error message for spam content detection        | "Your input contains words that are not allowed. Please revise your text and try again." |
+| spamEmailErrorMessage     | Error message for spam email detection          | "The email address you entered appears invalid or flagged. Please use a valid email address." |
+| timeTokenErrorMessage     | Error message for invalid time token            | "There was an issue with your session. Please refresh the page and try submitting the form again." |
+| timeThresholdErrorMessage | Error message for form submitted too fast       | "You submitted the form unusually quickly. Please wait a few seconds and try again." |
 | rateLimit                 | Enable or disable rate limiting                 | true                                     |
 | rateLimitSeconds          | Seconds to wait before allowing another submission | 30                                      |
 | rateLimitActionKey        | Unique action key for rate limiting             | "formProtection"                         |
+| rateLimitCookieName       | Name of the cookie used for rate limiting       | "submission"                             |
 | formId                    | Optional form ID for unique rate limiting per form | ""                                      |
-| rateLimitErrorMessage     | Error message for exceeding rate limit          | "Rate limit exceeded. Too many submissions." |
+| rateLimitErrorMessage     | Error message for exceeding rate limit          | "You just submitted this form successfully. Please wait a while before submitting again." |
 
 #### generateTimeTokenHook
 | Property                  | Description                                      | Default                                   |
