@@ -29,10 +29,13 @@
  * timeTokenErrorMessage     - Error message shown for invalid or missing time token
  * timeThresholdErrorMessage - Error message shown if the form was submitted too quickly
  * rateLimitErrorMessage     - Error shown if submission exceeds rate limit
+ * rateLimitMaxSubmissionsErrorMessage - Error shown if the total submission limit is exceeded
  *
  * rateLimit                 - Enable or disable rate limiting (default: true)
  * rateLimitSeconds          - Seconds to wait before allowing another submission (default: 30)
  * rateLimitActionKey        - Unique action key for rate limiting (default: formProtection)
+ * rateLimitMaxSubmissions   - Maximum number of submissions allowed within the timeframe (default: 5)
+ * rateLimitSubmissionInterval - Timeframe for counting submissions in seconds (default: 86400, i.e., 1 day)
  *
  * spamTimeSessionKey        - Session key used for clearing the time token (default: form_time_token)
  *
@@ -79,6 +82,11 @@ $spamEmailErrorMessage = $modx->getOption('spamEmailErrorMessage', $scriptProper
 $timeTokenErrorMessage = $modx->getOption('timeTokenErrorMessage', $scriptProperties, 'There was an issue with your session. Please refresh the page and try submitting the form again.');
 $timeThresholdErrorMessage = $modx->getOption('timeThresholdErrorMessage', $scriptProperties, 'You submitted the form unusually quickly. Please wait a few seconds and try again.');
 $rateLimitErrorMessage = $modx->getOption('rateLimitErrorMessage', $scriptProperties, 'You just submitted this form successfully. Please wait a while before submitting again.');
+$rateLimitMaxSubmissionsErrorMessage = $modx->getOption(
+    'rateLimitMaxSubmissionsErrorMessage',
+    $scriptProperties,
+    'You have reached the maximum number of submissions allowed. Please try again later.'
+);
 
 // Check if rate limiting is enabled
 $enableRateLimit = (bool)$modx->getOption('rateLimit', $scriptProperties, true);
@@ -107,10 +115,20 @@ if ($enableRateLimit && empty($hook->getErrors())) {
         // Retrieve the cookie name from script properties
         $cookieName = $modx->getOption('rateLimitCookieName', $scriptProperties, 'submission');
 
+        // Retrieve the maximum submissions and submission interval
+        $rateLimitMaxSubmissions = (int)$modx->getOption('rateLimitMaxSubmissions', $scriptProperties, 5);
+        $rateLimitSubmissionInterval = (int)$modx->getOption('rateLimitSubmissionInterval', $scriptProperties, 86400);
+
         // Check if the IP + User-Agent + Cookie exceeds the submission limit
-        if (function_exists('isRateLimited') && isRateLimited($rateLimitActionKey, $rateLimitSeconds, $cookieName)) {
+        if (function_exists('isRateLimited') && isRateLimited(
+            $rateLimitActionKey,
+            $rateLimitSeconds,
+            $cookieName,
+            $rateLimitMaxSubmissions,
+            $rateLimitSubmissionInterval
+        )) {
             $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] Rate limit exceeded: Too many submissions.");
-            $hook->addError('rate_limit', $rateLimitErrorMessage);
+            $hook->addError('rate_limit', $rateLimitMaxSubmissionsErrorMessage);
             return false;
         }
     } else {
