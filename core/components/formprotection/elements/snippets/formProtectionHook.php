@@ -74,11 +74,11 @@ $spamEmails = $modx->getOption('spamEmailPatterns', $scriptProperties,
 $spamEmailPatterns = array_map('trim', explode(',', $spamEmails));
 
 // Configurable error messages
-$spamContentErrorMessage = $modx->getOption('spamContentErrorMessage', $scriptProperties, 'Input picked up as spam.');
-$spamEmailErrorMessage = $modx->getOption('spamEmailErrorMessage', $scriptProperties, 'Email picked up as spam.');
-$timeTokenErrorMessage = $modx->getOption('timeTokenErrorMessage', $scriptProperties, 'Invalid time token.');
-$timeThresholdErrorMessage = $modx->getOption('timeThresholdErrorMessage', $scriptProperties, 'Form submitted too fast. Please wait a moment.');
-$rateLimitErrorMessage = $modx->getOption('rateLimitErrorMessage', $scriptProperties, 'Rate limit exceeded. Too many submissions.');
+$spamContentErrorMessage = $modx->getOption('spamContentErrorMessage', $scriptProperties, 'Your input contains words that are not allowed. Please revise your text and try again.');
+$spamEmailErrorMessage = $modx->getOption('spamEmailErrorMessage', $scriptProperties, 'The email address you entered appears invalid or flagged. Please use a valid email address.');
+$timeTokenErrorMessage = $modx->getOption('timeTokenErrorMessage', $scriptProperties, 'There was an issue with your session. Please refresh the page and try submitting the form again.');
+$timeThresholdErrorMessage = $modx->getOption('timeThresholdErrorMessage', $scriptProperties, 'You submitted the form unusually quickly. Please wait a few seconds and try again.');
+$rateLimitErrorMessage = $modx->getOption('rateLimitErrorMessage', $scriptProperties, 'You just submitted this form successfully. Please wait a while before submitting again.');
 
 // Check if rate limiting is enabled
 $enableRateLimit = (bool)$modx->getOption('rateLimit', $scriptProperties, true);
