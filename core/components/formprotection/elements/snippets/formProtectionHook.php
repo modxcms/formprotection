@@ -167,11 +167,10 @@ foreach ($formFields as $fieldName => $fieldValue) {
     }
 
     // Check for spam patterns
-    foreach ($spamWordPatterns as $spam) {
-        if (!empty($spam) && stripos($fieldValue, $spam) !== false) {
-            $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] SPAM DETECTED in field '{$fieldName}' with pattern '{$spam}'");
-            $hook->addError($fieldName, $spamContentErrorMessage);
-        }
+    $spamWordRegex = '/' . implode('|', array_map('preg_quote', $spamWordPatterns)) . '/i';
+    if (preg_match($spamWordRegex, $fieldValue)) {
+        $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] SPAM DETECTED in field '{$fieldName}'");
+        $hook->addError($fieldName, $spamContentErrorMessage);
     }
 }
 
