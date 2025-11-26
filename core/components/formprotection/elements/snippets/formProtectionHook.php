@@ -151,23 +151,17 @@ if ($enableRateLimit && empty($hook->getErrors())) {
         $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] rateLimiter.php not found at: {$path}");
     }
 }
+// Create a regex pattern from spam word patterns
+$spamWordRegex = '/' . implode('|', array_map('preg_quote', $spamWordPatterns)) . '/i';
 
 // Spam content check for all text fields
-$userIp = $_SERVER['REMOTE_ADDR'];
-$cacheKey = "spam_check_{$formId}_{$userIp}";
-$spamCheckResult = $modx->cacheManager->get($cacheKey);
-
-if (!$spamCheckResult) {
-    // Perform spam checks
-    foreach ($formFields as $fieldName => $fieldValue) {
-        if (!is_array($fieldValue) && !empty($fieldValue)) {
-            if (preg_match($spamWordRegex, $fieldValue)) {
-                $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] SPAM DETECTED in field '{$fieldName}'");
-                $hook->addError($fieldName, $spamContentErrorMessage);
-            }
+foreach ($formFields as $fieldName => $fieldValue) {
+    if (!is_array($fieldValue) && !empty($fieldValue)) {
+        if (preg_match($spamWordRegex, $fieldValue)) {
+            $modx->log(modX::LOG_LEVEL_ERROR, "[FormProtection] SPAM DETECTED in field '{$fieldName}'");
+            $hook->addError($fieldName, $spamContentErrorMessage);
         }
     }
-    $modx->cacheManager->set($cacheKey, true, 3600); // Cache result for 1 hour
 }
 
 // Email pattern spam check
