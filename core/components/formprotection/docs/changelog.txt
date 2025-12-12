@@ -1,3 +1,8 @@
+### 0.9.6
+
+* Added Package Docs
+* Refactor Rate Limiting
+
 ### 0.9.5
 
-* Re-factor Spam Word Filter by @jaygilmore in #2
+* Re-factor Spam Word Filter

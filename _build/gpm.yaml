@@ -1,5 +1,5 @@
 name: FormProtection
-version: 0.9.5
+version: 0.9.6
 lowCaseName: formprotection
 namespace: FormProtection
 description: 'A FormIt hook for MODX that provides enhanced spam protection through content filtering, timed submissions, and email validation.'
