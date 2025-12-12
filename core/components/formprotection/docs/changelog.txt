@@ -1,0 +1,3 @@
+### 0.9.5
+
+* Re-factor Spam Word Filter by @jaygilmore in #2

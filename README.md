@@ -3,7 +3,7 @@
 ## Overview
 Form Protection provides enhanced spam protection for your FormIt forms. It combines multiple spam prevention techniques to block automated submissions and spam attacks without inconveniencing legitimate users.
 
-Requires: MODX Revolution, FormIt
+Requires: MODX Revolution and FormIt
 
 ## Features
 - **Time-based token validation**: Block form submissions that happen too quickly (likely bots)
