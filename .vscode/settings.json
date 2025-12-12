@@ -1,0 +1,12 @@
+{
+  "sync-rsync.remote": "c0124@rs5pz3ug.modx.dev:/www/pkgs/formprotection",
+  "sync-rsync.local": "${workspaceFolder}/",
+  "sync-rsync.delete": false,
+  "sync-rsync.exclude": [
+    ".git",
+    ".vscode",
+    "node_modules",
+    "core/cache"
+  ],
+  "sync-rsync.onSave": true
+}
